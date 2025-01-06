@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Question Generator</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        h1, h3 {
+            color: #3b3b3b;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2em;
+        }
+
+        h3 {
+            font-size: 1.5em;
+        }
+
+        .container {
+            width: 60%;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+        }
+
+        #pdfForm {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #pdfFile {
+            margin-bottom: 20px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #questions {
+            margin-top: 30px;
+        }
+
+        #questions ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #questions ul li {
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin: 10px 0;
+            padding: 15px;
+            font-size: 1.1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload PDF and Generate Questions</h1>
+        <form id="pdfForm" enctype="multipart/form-data">
+            <input type="file" name="pdf_file" id="pdfFile" accept=".pdf" required>
+            <button type="submit">Upload and Generate Questions</button>
+        </form>
+
+        <div class="loading" id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>Generating questions...</p>
+        </div>
+
+        <div id="questions">
+            <h3>Generated Questions:</h3>
+            <ul id="questionList"></ul>
+            <p id="noQuestionsMessage" style="display:none; color: red;">No questions could be generated from the provided content.</p>
+        </div>
+    </div>
+
+    <script>
+        $('#pdfForm').on('submit', function(event) {
+            event.preventDefault();
+            var formData = new FormData();
+            formData.append('pdf_file', $('#pdfFile')[0].files[0]);
+
+            $('#loadingSpinner').addClass('active');
+
+            $.ajax({
+                url: '/upload_pdf',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    $('#loadingSpinner').removeClass('active');
+                    $('#questionList').empty();
+                    if (response.questions && response.questions.length > 0) {
+                        $('#noQuestionsMessage').hide();
+                        response.questions.forEach(function(question) {
+                            if (question.trim()) {
+                                $('#questionList').append('<li>' + question + '</li>');
+                            }
+                        });
+                    } else {
+                        $('#noQuestionsMessage').show();
+                    }
+                },
+                error: function(xhr) {
+                    $('#loadingSpinner').removeClass('active');
+                    alert('Error: ' + xhr.responseJSON.error);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
